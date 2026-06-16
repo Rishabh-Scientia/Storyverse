@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  passwordHash     String?
+  username         String         @unique
+  bio              String?
+  avatarUrl        String?
+  socialLinks      String?        // JSON stringified (Twitter, Instagram, etc.)
+  role             String         @default("USER") // USER, WRITER, ADMIN
+  isVerified       Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Analytics/Counts
+  streakDays       Int            @default(0)
+  lastReadDate     DateTime?
+
+  // Relations
+  stories          Story[]
+  comments         Comment[]
+  reviews          Review[]
+  ratings          Rating[]
+  bookmarks        Bookmark[]
+  readingLists     ReadingList[]
+  likes            Like[]
+  
+  // Follows
+  followers        Follow[]       @relation("UserFollowers")
+  following        Follow[]       @relation("UserFollowing")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Story {
+  id               String       @id @default(uuid())
+  title            String
+  subtitle         String?
+  description      String
+  genre            String
+  category         String
+  tags             String       // Comma-separated or JSON
+  language         String       @default("English")
+  ageRating        String       @default("Everyone") // Everyone, Teen, Mature
+  storyType        String       // Novel, Short Story, Poetry, Comic, Fan Fiction, Educational, Children
+  coverUrl         String?
+  manuscriptUrl    String?      // Local file reference or mock URL
+  
+  // Settings
+  status           String       @default("PUBLIC") // PUBLIC, PRIVATE, UNLISTED
+  monetization     String       @default("FREE")   // FREE, PAID, PREMIUM
+  price            Float        @default(0.0)
+
+  // AI Generated Fields
+  aiSummary        String?
+  aiKeywords       String?
+  aiContentRating  String?
+  aiCoverReview    String?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  // Author
+  authorId         String
+  author           User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Pages/Chapters
+  chapters         Chapter[]
+
+  // Stats
+  reads            Int          @default(0)
+  likes            Int          @default(0)
+
+  // Relations
+  comments         Comment[]
+  reviews          Review[]
+  ratings          Rating[]
+  bookmarks        Bookmark[]
+  likesRelation    Like[]
+}
+
+model Chapter {
+  id        String   @id @default(uuid())
+  storyId   String
+  title     String
+  content   String   // The text extracted from the PDF or typed
+  chapterNo Int
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  title     String
+  content   String
+  rating    Int      // 1-5 stars
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  value     Int      // 1-5
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  chapterNo Int      @default(1)
+  progress  Int      @default(0) // Scroll position or page percentage
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+}
+
+model ReadingList {
+  id        String   @id @default(uuid())
+  name      String   // Want to Read, Currently Reading, Finished Reading, or custom
+  userId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+}
+
