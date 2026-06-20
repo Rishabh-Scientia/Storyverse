@@ -31,28 +31,14 @@ if (process.env.VERCEL) {
 
 let dbInstance: PrismaClient;
 
-// Use LibSql adapter only if it is a remote database (libsql:// or https://)
-// Otherwise (local file database or standard development SQLite), use native Prisma engine
-if (databaseUrl.startsWith("libsql://") || databaseUrl.startsWith("https://")) {
-  const adapter = new PrismaLibSql({
-    url: databaseUrl,
-    authToken: process.env.DATABASE_AUTH_TOKEN,
-  });
-  dbInstance = new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
-} else {
-  // Local development / file fallback: use native Prisma SQLite engine with dynamic override
-  dbInstance = new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl,
-      },
-    },
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  } as any);
-}
+const adapter = new PrismaLibSql({
+  url: databaseUrl,
+  authToken: process.env.DATABASE_AUTH_TOKEN,
+});
+dbInstance = new PrismaClient({
+  adapter,
+  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+});
 
 export const db = globalForPrisma.prisma || dbInstance;
 

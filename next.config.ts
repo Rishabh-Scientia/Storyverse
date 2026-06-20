@@ -2,11 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    outputFileTracingIncludes: {
-      "**": ["./dev.db"],
-    },
-  } as any,
+  outputFileTracingIncludes: {
+    "**": ["./dev.db"],
+  },
 };
 
 export default nextConfig;
